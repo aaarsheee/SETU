@@ -62,7 +62,7 @@ const RegisterPage = ({ setIsAuthenticated }: RegisterPageProps) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:3001/register", formData);
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/register`, formData);
 
       if (response.data.success) {
         setIsAuthenticated(true);

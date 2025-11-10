@@ -33,7 +33,8 @@ const Success: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/payment-status",
+          `${import.meta.env.VITE_API_BASE_URL}/payment-status`,
+
         {
           product_id: decoded.transaction_uuid,
         }
