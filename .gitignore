@@ -1,0 +1,40 @@
+# Python virtual environment
+venv/
+*.pyc
+__pycache__/
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
+
+# Environment files
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VSCode settings (optional)
+.vscode/
+
+# Temporary build folders
+dist/
+build/
+
+# Ignore Python IDE project files
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore system files
+*.bak
+*.swp
+
+# Exclude large data files you don't want to push (optional)
+*.h5
+*.tflite
+*.ckpt
+Sign-Language-to-Text-and-Speech/
+structure.txt
