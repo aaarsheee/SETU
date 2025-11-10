@@ -25,7 +25,7 @@ const PORT = process.env.PORT || 3001;
 
 // ✅ CORS for frontend (Vite)
 app.use(cors({
-  origin: "http://localhost:5173", // your frontend
+  origin: ["http://localhost:5173", "https://setu-frontend.onrender.com"], // your frontend
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
 }));
