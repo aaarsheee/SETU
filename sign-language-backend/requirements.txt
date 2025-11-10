@@ -4,3 +4,8 @@ flask
 flask-cors
 numpy>=1.26.0
 gunicorn
+opencv-python~=4.10.0.84
+mediapipe~=0.10.14
+scikit-learn~=1.5.2
+pyttsx3~=2.98
+pillow~=10.4.0
