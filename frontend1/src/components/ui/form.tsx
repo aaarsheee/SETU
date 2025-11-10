@@ -1,66 +1,61 @@
-import * as React from "react"
-import * as LabelPrimitive from "@radix-ui/react-label"
-import { Slot } from "@radix-ui/react-slot"
-import {
-  Controller,
-  type ControllerProps,
-  type FieldPath,
-  type FieldValues,
-  FormProvider,
-  useFormContext,
-} from "react-hook-form"
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { Slot } from "@radix-ui/react-slot";
+import { useForm, Controller } from "react-hook-form"; // Import Controller if needed
+import type { FieldValues, FieldPath } from "react-hook-form"; // Adjusted imports
+import { cn } from "../../lib/utils";
+import { Label } from "./label";
 
-import { cn } from "../../lib/utils"
-import { Label } from "./label"
+const Form = ({ children, onSubmit }: { children: React.ReactNode; onSubmit: (data: any) => void }) => {
+  const { register, handleSubmit } = useForm(); // Use useForm to manage form state
 
-const Form = FormProvider
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {React.Children.map(children, child => {
+        // Clone the child and pass register as a prop
+        return React.isValidElement(child) ? React.cloneElement(child as React.ReactElement<any>, { register } as any) : child;
+      })}
+    </form>
+  );
+};
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 > = {
-  name: TName
-}
+  name: TName;
+  register: any; // Add register to the context value
+  error?: any; // Add error to the context value
+  formItemId: string; // Add formItemId to the context value
+  formDescriptionId: string; // Add formDescriptionId to the context value
+  formMessageId: string; // Add formMessageId to the context value
+};
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
-)
+);
 
-const FormField = <
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->({
+// Adjust FormField to use register from Form
+const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({
+  name,
+  register,
   ...props
-}: ControllerProps<TFieldValues, TName>) => {
+}: { name: TName; register: any } & React.InputHTMLAttributes<HTMLInputElement>) => {
   return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller {...props} />
+    <FormFieldContext.Provider value={{ name, register, formItemId: `${name}-item`, formDescriptionId: `${name}-description`, formMessageId: `${name}-message` }}>
+      <input {...register(name)} {...props} /> {/* Register the input */}
     </FormFieldContext.Provider>
-  )
-}
+  );
+};
 
+// Adjust useFormField to return the necessary values
 const useFormField = () => {
-  const fieldContext = React.useContext(FormFieldContext)
-  const itemContext = React.useContext(FormItemContext)
-  const { getFieldState, formState } = useFormContext()
-
-  const fieldState = getFieldState(fieldContext.name, formState)
-
+  const fieldContext = React.useContext(FormFieldContext);
   if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
+    throw new Error("useFormField should be used within <FormField>");
   }
-
-  const { id } = itemContext
-
-  return {
-    id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
-    formDescriptionId: `${id}-form-item-description`,
-    formMessageId: `${id}-form-item-message`,
-    ...fieldState,
-  }
-}
+  return fieldContext;
+};
 
 type FormItemContextValue = {
   id: string
@@ -165,12 +160,11 @@ const FormMessage = React.forwardRef<
 FormMessage.displayName = "FormMessage"
 
 export {
-  useFormField,
   Form,
+  FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormDescription,
   FormMessage,
-  FormField,
 }

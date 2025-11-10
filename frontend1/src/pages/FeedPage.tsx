@@ -157,12 +157,13 @@ const FeedPage = () => {
   };
 
   const handleDelete = (postId: number) => {
-    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    setPosts((prevPosts:any[]) => 
+      prevPosts.filter((post) => post.id !== postId));
   };
 
   const handleLike = (postId: number) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
+    setPosts((prevPosts: any[]) =>
+      prevPosts.map((post: any) =>
         post.id === postId
           ? {
               ...post,
@@ -318,7 +319,7 @@ const FeedPage = () => {
           animate={feedInView ? "visible" : "hidden"}
           className="space-y-6"
         >
-          {posts.map((post) => (
+          {posts.map((post: any) => (
             <motion.div key={post.id} variants={postVariants}>
               <Card className="gradient-card hover:shadow-lg transition-all duration-300">
                 <CardHeader className="pb-3 flex justify-between items-start">
@@ -326,7 +327,7 @@ const FeedPage = () => {
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={post.author.avatar} />
                       <AvatarFallback>
-                        {post.author.name.split(" ").map((n) => n[0]).join("")}
+                        {post.author.name.split(" ").map((n: string) => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div>

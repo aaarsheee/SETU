@@ -2,7 +2,9 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 
 export type Language = 'en' | 'ne';
 
-type Translations = Record<string, string>;
+type Translations = {
+  [key: string]: string | Translations;
+};
 
 interface LanguageContextType {
   language: Language;
@@ -33,7 +35,7 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
         console.error(`Failed to load translations for ${language}:`, error);
         if (language !== 'en') {
           const fallbackModule = await import('../translations/en.ts');
-          setTranslations(fallbackModule.default);
+          setTranslations(fallbackModule.default as any);
         }
       }
     };
