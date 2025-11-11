@@ -7,7 +7,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 
-const BACKEND_URL = "http://localhost:8000/predict";
+const BACKEND_URL = "https://setu-sign-backend.onrender.com/predict";
 
 const DetectPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
