@@ -3,7 +3,7 @@ wheel
 flask
 flask-cors
 gunicorn
-numpy~=2.1.2
+numpy>=1.23.0,<2
 opencv-python~=4.10.0.84
 mediapipe==0.10.21
 scikit-learn~=1.5.2
