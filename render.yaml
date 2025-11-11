@@ -3,7 +3,7 @@ services:
     name: sign-language-backend
     env: python
     rootDir: sign-language-backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
