@@ -38,3 +38,4 @@ build/
 *.ckpt
 Sign-Language-to-Text-and-Speech/
 structure.txt
+sign-language-backend/venv/
