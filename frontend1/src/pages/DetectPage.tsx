@@ -13,15 +13,17 @@ interface HandsResults {
   multiHandLandmarks?: HandLandmark[][];
 }
 
+// Hand connections
 const HAND_CONNECTIONS: number[][] = [
-  [0, 1], [1, 2], [2, 3], [3, 4],
-  [0, 5], [5, 6], [6, 7], [7, 8],
-  [0, 9], [9, 10], [10, 11], [11, 12],
+  [0, 1], [1, 2], [2, 3], [3, 4],       
+  [0, 5], [5, 6], [6, 7], [7, 8],       
+  [0, 9], [9, 10], [10, 11], [11, 12],  
   [0, 13], [13, 14], [14, 15], [15, 16],
   [0, 17], [17, 18], [18, 19], [19, 20],
-  [5, 9], [9, 13], [13, 17], [17, 5]
+  [5, 9], [9, 13], [13, 17], [17, 5]    
 ];
 
+// Finger colors
 const fingerColors = {
   thumb: "#FF4500",
   index: "#00FFFF",
@@ -41,7 +43,6 @@ const DetectPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [predictedLetter, setPredictedLetter] = useState<string>("");
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => stopDetection();
   }, []);
@@ -81,26 +82,29 @@ const DetectPage: React.FC = () => {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      canvas.width = videoRef.current.videoWidth || 640;
-      canvas.height = videoRef.current.videoHeight || 480;
-
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       ctx.save();
       ctx.scale(-1, 1);
       ctx.translate(-canvas.width, 0);
 
+      ctx.lineWidth = 2;
       HAND_CONNECTIONS.forEach(([start, end]) => {
         const lmStart = hand[start];
         const lmEnd = hand[end];
         ctx.beginPath();
         ctx.moveTo(lmStart.x * canvas.width, lmStart.y * canvas.height);
         ctx.lineTo(lmEnd.x * canvas.width, lmEnd.y * canvas.height);
+
         let color = "#00FF00";
         if ([0,1,2,3,4].includes(start)) color = fingerColors.thumb;
         else if ([5,6,7,8].includes(start)) color = fingerColors.index;
         else if ([9,10,11,12].includes(start)) color = fingerColors.middle;
         else if ([13,14,15,16].includes(start)) color = fingerColors.ring;
         else if ([17,18,19,20].includes(start)) color = fingerColors.pinky;
+
         ctx.strokeStyle = color;
         ctx.stroke();
       });
@@ -114,6 +118,7 @@ const DetectPage: React.FC = () => {
         else if ([9,10,11,12].includes(idx)) color = fingerColors.middle;
         else if ([13,14,15,16].includes(idx)) color = fingerColors.ring;
         else if ([17,18,19,20].includes(idx)) color = fingerColors.pinky;
+
         ctx.fillStyle = color;
         ctx.fill();
       });
@@ -130,12 +135,14 @@ const DetectPage: React.FC = () => {
     const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
+
     hands.setOptions({
       maxNumHands: 1,
       modelComplexity: 1,
       minDetectionConfidence: 0.7,
       minTrackingConfidence: 0.7,
     });
+
     hands.onResults(onResults);
     handsRef.current = hands;
 
@@ -143,9 +150,10 @@ const DetectPage: React.FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setIsDetecting(true); // <-- move here for Render
         await videoRef.current.play();
       }
+
+      setIsDetecting(true);
       setIsLoading(false);
 
       const loop = async () => {
@@ -154,6 +162,7 @@ const DetectPage: React.FC = () => {
         animationRef.current = requestAnimationFrame(loop);
       };
       loop();
+
     } catch (err) {
       console.error("Camera start failed", err);
       alert("Cannot access camera. Make sure your site is HTTPS and permissions are granted.");
@@ -199,19 +208,31 @@ const DetectPage: React.FC = () => {
 
               <CardContent>
                 <div className="relative">
-                  <div className="aspect-video bg-muted rounded-xl overflow-hidden relative">
-                    <video ref={videoRef} autoPlay playsInline muted   className="w-full h-[480px] object-cover [transform:scaleX(-1)]" />
+                  <div className="aspect-video bg-muted rounded-xl overflow-hidden">
+                    {/* Updated video with fixed height for Render */}
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-[480px] object-cover [transform:scaleX(-1)]"
+                    />
                     <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full pointer-events-none" />
-                    {!isDetecting && !isLoading && (
-                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
-                        <CameraIcon className="w-16 h-16 text-muted-foreground mx-auto" />
+                    {!isDetecting && (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 absolute inset-0">
+                        {isLoading ? (
+                          <div className="text-center">
+                            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p>Initializing camera...</p>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <CameraIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                          </div>
+                        )}
                       </div>
                     )}
-                    {isLoading && (
-                      <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-                        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    )}
+
                     {isDetecting && predictedLetter && (
                       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="absolute bottom-4 left-4 right-4 bg-black/80 text-white rounded-xl p-4 text-center text-3xl font-bold">
                         {predictedLetter}
