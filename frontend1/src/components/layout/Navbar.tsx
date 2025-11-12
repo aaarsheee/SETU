@@ -29,7 +29,7 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
   const navItems = [
     { name: t("nav.home"), path: "/" },
     { name: t("nav.learn"), path: "/learn", protected: true },
-    { name: t("nav.detect"), path: "/detect", requiresAuth: true },
+    { name: t("nav.detect"), path: "/detect"},
     { name: t("nav.feed"), path: "/feed", protected: true },
     { name: t("nav.donate"), path: "/donate" },
     { name: t("nav.about"), path: "/about" },
@@ -88,9 +88,7 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
                   } ${item.requiresAuth && !isAuthenticated ? "cursor-pointer" : ""}`}
                 >
                   {item.name}
-                  {item.requiresAuth && !isAuthenticated && (
-                    <span className="ml-1 text-xs text-warning">🔒</span>
-                  )}
+                
                   {isActivePath(item.path) && (
                     <motion.div
                       layoutId="activeTab"
