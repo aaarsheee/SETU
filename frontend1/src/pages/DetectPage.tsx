@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import * as mpHands from "@mediapipe/hands";
-import { Camera } from "@mediapipe/camera_utils";
+import { Hands } from "@mediapipe/hands";
 import { motion } from "framer-motion";
 import { Camera as CameraIcon, CameraOff, Settings, Globe } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -9,28 +8,52 @@ import { Badge } from "../components/ui/badge";
 
 const BACKEND_URL = "https://setu-sign-backend.onrender.com/predict";
 
+type HandLandmark = { x: number; y: number; z?: number };
+interface HandsResults {
+  multiHandLandmarks?: HandLandmark[][];
+}
+
+// Hand connections
+const HAND_CONNECTIONS: number[][] = [
+  [0, 1], [1, 2], [2, 3], [3, 4],       // Thumb
+  [0, 5], [5, 6], [6, 7], [7, 8],       // Index
+  [0, 9], [9, 10], [10, 11], [11, 12],  // Middle
+  [0, 13], [13, 14], [14, 15], [15, 16],// Ring
+  [0, 17], [17, 18], [18, 19], [19, 20],// Pinky
+  [5, 9], [9, 13], [13, 17], [17, 5]    // Palm
+];
+
+// Finger colors
+const fingerColors = {
+  thumb: "#FF4500",
+  index: "#00FFFF",
+  middle: "#FFFF00",
+  ring: "#FF00FF",
+  pinky: "#00FF00",
+  palm: "#00FF00"
+};
+
 const DetectPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const handsRef = useRef<mpHands.Hands | null>(null);
-  const cameraRef = useRef<any>(null);
+  const handsRef = useRef<Hands | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   const [isDetecting, setIsDetecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [predictedLetter, setPredictedLetter] = useState<string>("");
 
+  // Cleanup
   useEffect(() => {
-    return () => {
-      // cleanup on unmount
-      stopDetection();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => stopDetection();
   }, []);
 
-  const onResults = async (results: mpHands.Results) => {
+  const onResults = async (results: HandsResults) => {
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) return;
 
     const hand = results.multiHandLandmarks[0];
+
+    // Prepare landmarks for backend
     const xVals = hand.map((lm) => lm.x);
     const yVals = hand.map((lm) => lm.y);
     const landmarks: number[] = [];
@@ -39,10 +62,10 @@ const DetectPage: React.FC = () => {
       landmarks.push(hand[i].x - Math.min(...xVals));
       landmarks.push(hand[i].y - Math.min(...yVals));
     }
-
     while (landmarks.length < 42) landmarks.push(0);
     if (landmarks.length > 42) landmarks.length = 42;
 
+    // Send to backend
     try {
       const res = await fetch(BACKEND_URL, {
         method: "POST",
@@ -56,30 +79,68 @@ const DetectPage: React.FC = () => {
       console.error("Prediction failed", err);
     }
 
-    // optional: draw simple landmarks overlay
+    // Draw landmarks
     if (canvasRef.current && videoRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
+
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "rgba(0,0,0,0.0)";
-      hand.forEach((lm) => {
+
+      // Optional: mirror horizontally
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.translate(-canvas.width, 0);
+
+      // Draw connections
+      ctx.lineWidth = 2;
+      HAND_CONNECTIONS.forEach(([start, end]) => {
+        const lmStart = hand[start];
+        const lmEnd = hand[end];
         ctx.beginPath();
-        ctx.arc(lm.x * canvas.width, lm.y * canvas.height, 4, 0, 2 * Math.PI);
-        ctx.fillStyle = "#10b981"; // green
+        ctx.moveTo(lmStart.x * canvas.width, lmStart.y * canvas.height);
+        ctx.lineTo(lmEnd.x * canvas.width, lmEnd.y * canvas.height);
+
+        let color = "#00FF00";
+        if ([0,1,2,3,4].includes(start)) color = fingerColors.thumb;
+        else if ([5,6,7,8].includes(start)) color = fingerColors.index;
+        else if ([9,10,11,12].includes(start)) color = fingerColors.middle;
+        else if ([13,14,15,16].includes(start)) color = fingerColors.ring;
+        else if ([17,18,19,20].includes(start)) color = fingerColors.pinky;
+
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      });
+
+      // Draw landmarks
+      hand.forEach((lm, idx) => {
+        ctx.beginPath();
+        ctx.arc(lm.x * canvas.width, lm.y * canvas.height, 5, 0, 2 * Math.PI);
+        let color = "#FF0000";
+        if ([0,1,2,3,4].includes(idx)) color = fingerColors.thumb;
+        else if ([5,6,7,8].includes(idx)) color = fingerColors.index;
+        else if ([9,10,11,12].includes(idx)) color = fingerColors.middle;
+        else if ([13,14,15,16].includes(idx)) color = fingerColors.ring;
+        else if ([17,18,19,20].includes(idx)) color = fingerColors.pinky;
+
+        ctx.fillStyle = color;
         ctx.fill();
       });
+
+      ctx.restore();
     }
   };
 
+  // Start detection using native getUserMedia
   const startDetection = async () => {
     if (!videoRef.current) return;
     setIsLoading(true);
     setPredictedLetter("");
 
-    const hands = new mpHands.Hands({
+    const hands = new Hands({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
 
@@ -93,46 +154,45 @@ const DetectPage: React.FC = () => {
     hands.onResults(onResults);
     handsRef.current = hands;
 
-    const camera = new Camera(videoRef.current, {
-      onFrame: async () => {
-        if (!handsRef.current) return;
-        await handsRef.current.send({ image: videoRef.current! });
-      },
-      width: 640,
-      height: 480,
-    });
-
-    cameraRef.current = camera;
     try {
-      await camera.start();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
       setIsDetecting(true);
+      setIsLoading(false);
+
+      // Animation loop
+      const loop = async () => {
+        if (!handsRef.current || !videoRef.current) return;
+        await handsRef.current.send({ image: videoRef.current });
+        animationRef.current = requestAnimationFrame(loop);
+      };
+      loop();
+
     } catch (err) {
       console.error("Camera start failed", err);
-    } finally {
+      alert("Cannot access camera. Make sure your site is HTTPS and permissions are granted.");
       setIsLoading(false);
     }
   };
 
   const stopDetection = () => {
-    try {
-      cameraRef.current?.stop();
-    } catch {}
-    try {
-      handsRef.current?.close();
-    } catch {}
-    cameraRef.current = null;
-    handsRef.current = null;
-    setIsDetecting(false);
-    setPredictedLetter("");
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach((t) => t.stop());
-      videoRef.current.srcObject = null;
-    }
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    const tracks = (videoRef.current?.srcObject as MediaStream)?.getTracks() || [];
+    tracks.forEach((t) => t.stop());
+    if (videoRef.current) videoRef.current.srcObject = null;
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
       if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
+    handsRef.current?.close();
+    handsRef.current = null;
+    animationRef.current = null;
+    setIsDetecting(false);
+    setPredictedLetter("");
   };
 
   return (
@@ -142,7 +202,6 @@ const DetectPage: React.FC = () => {
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Sign <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Detection</span>
           </h1>
-          {/* <p className="text-xl text-muted-foreground max-w-2xl mx-auto">AI-powered real-time sign language detection using your camera.</p> */}
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -159,7 +218,7 @@ const DetectPage: React.FC = () => {
               <CardContent>
                 <div className="relative">
                   <div className="aspect-video bg-muted rounded-xl overflow-hidden">
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform scale-x-[-1]" />
                     <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full pointer-events-none" />
                     {!isDetecting && (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 absolute inset-0">
@@ -171,7 +230,6 @@ const DetectPage: React.FC = () => {
                         ) : (
                           <div className="text-center">
                             <CameraIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                            {/* <p className="text-muted-foreground">Click start to begin detection</p> */}
                           </div>
                         )}
                       </div>
