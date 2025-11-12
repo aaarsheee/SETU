@@ -86,12 +86,16 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3 text-muted-foreground">
                 <Mail className="w-4 h-4" />
-                <span className="text-sm">contact@psetu.org</span>
+                <span className="text-sm">info.psetu@gmail.com</span>
               </div>
-              <div className="flex items-center space-x-3 text-muted-foreground">
-                <Phone className="w-4 h-4" />
-                <span className="text-sm">+977-1-234567</span>
-              </div>
+              {["+977 9860201408", "+977 9812345678", "+977 9845678901"].map((num) => (
+      <div key={num} className="flex items-center space-x-3">
+        <Phone className="w-4 h-4" />
+        <a href={`tel:${num}`} className="text-sm hover:text-primary transition-colors">
+          {num}
+        </a>
+      </div>
+    ))}
               <div className="flex items-center space-x-3 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span className="text-sm">Kathmandu, Nepal</span>
