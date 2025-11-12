@@ -200,7 +200,7 @@ const DetectPage: React.FC = () => {
               <CardContent>
                 <div className="relative">
                   <div className="aspect-video bg-muted rounded-xl overflow-hidden relative">
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover [transform:scaleX(-1)]" />
+                    <video ref={videoRef} autoPlay playsInline muted   className="w-full h-[480px] object-cover [transform:scaleX(-1)]" />
                     <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full pointer-events-none" />
                     {!isDetecting && !isLoading && (
                       <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
