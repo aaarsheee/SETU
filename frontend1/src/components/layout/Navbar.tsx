@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Hand, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "../ui/button";
 import { LanguageSwitcher } from "../ui/language-switcher";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -9,6 +9,12 @@ import { useLanguage } from "../../contexts/LanguageContext";
 interface NavbarProps {
   isAuthenticated?: boolean;
   onLogout?: () => void;
+}
+
+interface NavItem {
+  name: string;
+  path: string;
+  protected?: boolean; // optional
 }
 
 const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
@@ -21,27 +27,25 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { name: t("nav.home"), path: "/" },
     { name: t("nav.learn"), path: "/learn", protected: true },
-    { name: t("nav.detect"), path: "/detect"},
+    { name: t("nav.detect"), path: "/detect" }, // no auth required
     { name: t("nav.feed"), path: "/feed", protected: true },
     { name: t("nav.donate"), path: "/donate" },
     { name: t("nav.about"), path: "/about" },
-    { name: t("Contact"), path: "/contact" },
+    { name: "Contact", path: "/contact" },
   ];
 
   const isActivePath = (path: string) => location.pathname === path;
 
-  const handleNavClick = (item: typeof navItems[0], e: React.MouseEvent) => {
-    if (item.requiresAuth && !isAuthenticated) {
+  const handleNavClick = (item: NavItem, e: React.MouseEvent) => {
+    if (item.protected && !isAuthenticated) {
       e.preventDefault();
-      // Redirect to login
       window.location.href = "/login";
     }
   };
@@ -75,7 +79,6 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => {
               if (item.protected && !isAuthenticated) return null;
-              
               return (
                 <Link
                   key={item.name}
@@ -85,10 +88,9 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
                     isActivePath(item.path)
                       ? "text-primary"
                       : "text-muted-foreground hover:text-foreground"
-                  } ${item.requiresAuth && !isAuthenticated ? "cursor-pointer" : ""}`}
+                  }`}
                 >
                   {item.name}
-                
                   {isActivePath(item.path) && (
                     <motion.div
                       layoutId="activeTab"
@@ -164,7 +166,6 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
             <div className="container mx-auto px-4 py-4 space-y-4">
               {navItems.map((item) => {
                 if (item.protected && !isAuthenticated) return null;
-                
                 return (
                   <Link
                     key={item.name}
@@ -180,9 +181,6 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
                     }`}
                   >
                     <span>{item.name}</span>
-                    {item.requiresAuth && !isAuthenticated && (
-                      <span className="text-warning">🔒</span>
-                    )}
                   </Link>
                 );
               })}
@@ -190,25 +188,25 @@ const Navbar = ({ isAuthenticated = false, onLogout }: NavbarProps) => {
               <div className="pt-4 space-y-4 border-t border-border">
                 {isAuthenticated ? (
                   <>
-                     <LanguageSwitcher />
-                     <Link
-                       to="/profile"
-                       onClick={() => setIsOpen(false)}
-                       className="flex items-center space-x-2 px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground"
-                     >
-                       <User className="w-4 h-4" />
-                       <span>{t("nav.profile")}</span>
-                     </Link>
-                     <button
-                       onClick={() => {
-                         onLogout?.();
-                         setIsOpen(false);
-                       }}
-                       className="flex items-center space-x-2 px-3 py-2 text-base font-medium text-destructive hover:text-destructive/80 w-full"
-                     >
-                       <LogOut className="w-4 h-4" />
-                       <span>{t("nav.logout")}</span>
-                     </button>
+                    <LanguageSwitcher />
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center space-x-2 px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>{t("nav.profile")}</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        onLogout?.();
+                        setIsOpen(false);
+                      }}
+                      className="flex items-center space-x-2 px-3 py-2 text-base font-medium text-destructive hover:text-destructive/80 w-full"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>{t("nav.logout")}</span>
+                    </button>
                   </>
                 ) : (
                   <div className="space-y-2">
